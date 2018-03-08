@@ -74,7 +74,7 @@ class NeuralNet:
 		print("Training neural network...")
 		for epoch in range(0,nEpochs):
 			for i in range(0, nSamples):
-				mean_err[i] = self.train_net(data[i,:], labels[i], nClasses, 1)
+				mean_err[i] = self.train_net(data[i,:][np.newaxis,:], labels[i], nClasses, 1)
 			print(f"At Epoch: {epoch}\nMean error: {np.mean(mean_err)}")
 
 	def add_layer(self, model):
