@@ -7,6 +7,11 @@ class NeuralNet:
 		self.training_data = None
 		self.training_labels = None
 		self.test_data = None
+
+	def init_weights(self, method="glorot"):
+		for layer in self.layers:
+			layer.init_weights()
+		pass
 		
 	def fprop(self, data):
 		layer_input = np.array(data)
@@ -32,6 +37,10 @@ class NeuralNet:
 			self.train_minibatch(data, labels, parameters)
 		elif method == "stochastic":
 			self.train_stochastic(data, labels, parameters)
+		elif method == "batch":
+			self.train_batch(data,labels,parameters)
+		else:
+			self.train_batch(data,labels,parameters)
 		pass
 
 
@@ -76,6 +85,21 @@ class NeuralNet:
 			for i in range(0, nSamples):
 				mean_err[i] = self.train_net(data[i,:][np.newaxis,:], labels[i], nClasses, 1)
 			print(f"At Epoch: {epoch}\nMean error: {np.mean(mean_err)}")
+
+	def train_batch(self, data, labels, parameters):
+		# Get the relevant parameters
+		nEpochs = parameters["nEpochs"]
+		nClasses = self.layers[-1].nd
+
+		# Get the feature space
+		nSamples, nD = data.shape
+
+		# Train the network
+		print("Training neural network...")
+		for epoch in range(0,nEpochs):
+			mean_err = self.train_net(data, labels, nClasses, nSamples)
+			print(f"At Epoch: {epoch}\nMean error: {mean_err}")
+
 
 	def add_layer(self, model):
 		self.layers.append(model)

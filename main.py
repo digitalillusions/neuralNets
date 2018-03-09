@@ -29,6 +29,7 @@ def init_net_2a(**kwargs):
 	net.add_layer(md.ReLU(200))
 	net.add_layer(md.Linear(200,nClasses))
 	net.add_layer(md.Softmax(nD))
+	net.init_weights(method="glorot")
 
 	# Load model if specified and availiable
 	if('load_model' in kwargs and kwargs['load_model']==True):
@@ -82,6 +83,7 @@ def nonLinearTest():
 	nClasses = 2
 	train_data = readDataFromCsv("/Users/stefanjeske/Downloads/mnist/train_data.csv", np.float, nSamples, ',')
 	train_labels_temp = readDataFromCsv("/Users/stefanjeske/Downloads/mnist/train_label.csv", np.int, nSamples, ',')
+	train_data /= 10
 	train_labels = np.squeeze(train_labels_temp)
 
 	# Get the feature space
@@ -95,10 +97,13 @@ def nonLinearTest():
 	net.add_layer(md.ReLU(nD+addFeatures))
 	net.add_layer(md.Linear(nD+addFeatures,nClasses))
 	net.add_layer(md.Softmax(nD))
+	net.init_weights(method="glorot")
+
 	net.train(train_data, train_labels, train_params, method="minibatch")
 
 	valid_data = readDataFromCsv("/Users/stefanjeske/Downloads/mnist/valid_data.csv", np.float, nSamples, ',')
 	valid_labels_temp = readDataFromCsv("/Users/stefanjeske/Downloads/mnist/valid_label.csv", np.int, nSamples, ',')
+	valid_data /= 10
 	valid_labels = np.squeeze(valid_labels_temp)
 
 	nValSamples,nDim = valid_data.shape

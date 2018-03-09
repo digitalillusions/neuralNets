@@ -2,8 +2,16 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 class Module(ABC):
+	"""Abstract class for all modular components in the neural network.
+	These components contain linear layers as well as non-linear elements
+	such as ReLU or tanh.
+	"""
+
 	def __init__(self):
 		super().__init__()
+		pass
+
+	def init_weights(self):
 		pass
 	
 	@abstractmethod
@@ -23,20 +31,39 @@ class Module(ABC):
 
 	
 class Linear(Module):
+	"""The linear element. This elements is simply used to connect the neurons
+	of one layer to all of those of another layer. Very simple fully connected.
+	"""
 	def __init__(self,nd_, ny_):
+		"""Setting up the environment for the layer to work properly, when the first 
+		fprop is called. The weight matrix will be of size (nd, ny)
+
+		Arguments:
+		nd_ -- The number of input dimensions as in the number of input features
+		ny_ -- The number of output dimensions, e.g. the number of output classes
+		"""
 		self.nd = nd_ 														# Number of features 
 		self.ny = ny_		 	
-		sigma = np.sqrt(2.0 / (self.nd + self.ny))							# Number of classes
-		self.W = np.random.normal(0, sigma,((self.nd,self.ny)))		 		# Weight vector (ny x nd)
+		self.W = None		 												# Weight vector (ny x nd)
 		self.bias = np.zeros((1,self.ny))									# Bias (ny x 1)
 		self.input = None
 		self.output = None
 		self.grad_w = None
 		self.grad_w0 = None
 
-	def fprop(self, z):
-		''' Compute output of layer with input z assumed to be in (nSamples x nD) '''
+	def init_weights(self, method="glorot"):
+		"""Initilize the weights corresponding to some non linearity lateron.
 
+		Keyword arguments:
+		method -- Method to use for initilization of weights (default "glorot")
+		"""
+		if(method=="glorot"):
+			self.W = init_weights_glorot(self.nd, self.ny, self.nd, self.ny)
+		elif(method=="he"):
+			self.W = init_weights_he(self.nd, self.ny, self.nd, self.ny)
+
+	def fprop(self, z):
+		""" Compute output of layer with input z assumed to be in (nSamples x nD)"""
 		# Get shape and multiply weights on input in the correct order raise error 
 		self.input = np.array(z)
 		self.output = np.dot(z, self.W) + self.bias
@@ -44,31 +71,36 @@ class Linear(Module):
 		return np.array(self.output)
 
 	def bprop(self, grad_output):
-		''' Compute gradient according to backpropagation grad_output is of dimension  '''
+		""" Compute gradient according to backpropagation grad_output is of dimension  """
 		self.grad_w = np.dot(self.input.transpose(), grad_output)
 		self.grad_w0 = np.sum(grad_output, 0)
 		return np.dot(grad_output, self.W.transpose())
 
 	def get_gradients(self):
-		''' Return gradients '''
+		""" Return gradients w.r.t. the weights """
 		return np.array(self.grad_w), np.array(self.grad_w0)
 
 	def update_weights(self, weights, up_fun):
-		''' Update the weight coefficients '''
+		""" Update the weight coefficients """
 		self.W = up_fun(self.W, weights[0])
 		self.bias = up_fun(self.bias, weights[1])
 
 
 class Softmax(Module):
+	"""Softmax module computing the softmax function. This implementation uses the
+	largest input vector in order to reduce the magnitude of the computed 
+	exponention as in: softmax(a-b) = softmax(a)
+	"""
 	def __init__(self, nd_):
+		"""Setup the module where nd_ is the input and output dimension"""
 		self.nd = nd_
 		self.input = None
 		self.output = None
 		self.grad_w = None
-		pass
+		
 
 	def fprop(self, z):
-		''' Compute output of layer with input z assumed to be in (nSamples x nd) '''
+		""" Compute output of layer with input z assumed to be in (nSamples x nd) """
 		self.input = np.array(z)
 		inp_max = np.max(z, 1)
 		exp = np.exp(z.transpose() - inp_max).transpose()
@@ -78,6 +110,7 @@ class Softmax(Module):
 		return softmax
 
 	def bprop(self, grad_output):
+		""" Compute the gradient of the output w.r.t. the input """
 		grad_input = grad_output - np.sum(np.multiply(grad_output, self.output), axis=1)[:,np.newaxis]
 		grad_input = np.multiply(grad_input, self.output)
 		return grad_input
@@ -123,6 +156,16 @@ class ReLU(Module):
 		grad_output[self.input < 0] = 0
 		grad_input = np.array(grad_output)
 		return grad_input
+
+def init_weights_glorot(nin, nout, nd, ny):
+	sigma = np.sqrt(2/(nin+nout))
+	weights = np.random.normal(0, sigma,((nd, ny)))		 		# Weight vector (nd x ny)
+	return weights
+
+def init_weights_he(nin, nout, nd, ny):
+	sigma = np.sqrt(2/(nin))
+	weights = np.random.normal(0, sigma,((nd, ny)))		 		# Weight vector (nd x ny)
+	return weights
 
 
 def grad_desc(value, grad):
