@@ -116,7 +116,17 @@ class Softmax(Module):
 		return grad_input
 
 class CrossEntropyLoss(Module):
+	"""Loss function computing the cross entropy loss for a given number of class labels. Note that the class
+	labels are given in single vector using integers, rather than the common 1-of-k notation. I.e. the vector
+	of labels should look something like 
+	[1, 0, 3, 6, ...]^T
+	"""
 	def __init__(self, nd_):
+		"""Receive the dimensionality of input and setup member variables
+
+		Arguments:
+		nd_ -- Number of dimensions of the input vector
+		"""
 		self.nd = nd_
 		self.input = None
 		self.output = None
@@ -125,6 +135,7 @@ class CrossEntropyLoss(Module):
 		
 
 	def fprop(self, z):
+		""" Forward propagate, i.e. compute the scalar loss value from input samples. """
 		self.t_labels = np.squeeze(self.t_labels)
 		self.nSamples = z.shape[0]
 		self.input = np.array(z)
@@ -133,6 +144,7 @@ class CrossEntropyLoss(Module):
 		return output
 
 	def bprop(self, grad_output):
+		""" Compute the gradient of the input vector of samples w.r.t. the corresponding loss value. """
 		self.t_labels = np.squeeze(self.t_labels)
 		grad_l = np.zeros((self.nSamples, self.nd))
 		grad_l[np.arange(self.nSamples), self.t_labels] = (-1.) * 1.0/self.input[np.arange(self.nSamples), self.t_labels]
@@ -140,9 +152,13 @@ class CrossEntropyLoss(Module):
 		return grad_l
 
 	def set_labels(self, tlabels):
+		""" Define the target labels for the samples in order to compute the loss function """
 		self.t_labels = np.array(tlabels)
 
 class ReLU(Module):
+	""" Implementation of commonly used nonlinearity in neural networks. Simply 
+	computes u(x) = x if x > 0 else 0.
+	"""
 	def __init__(self, nd_):
 		self.nd = nd_
 		self.input = None
@@ -158,16 +174,23 @@ class ReLU(Module):
 		return grad_input
 
 def init_weights_glorot(nin, nout, nd, ny):
+	""" Samples the weights using variance Var(W) = 2/(nin + nout) according to 
+	Glorot initialization for tanh elements from a normal distribution with zero mean.
+	"""
 	sigma = np.sqrt(2/(nin+nout))
 	weights = np.random.normal(0, sigma,((nd, ny)))		 		# Weight vector (nd x ny)
 	return weights
 
 def init_weights_he(nin, nout, nd, ny):
+	""" Sample the weights using variance Var(W) = 2/nin according to He initilization
+	for ReLU nonlinearities from a normal distribution with zero mean.
+	"""
 	sigma = np.sqrt(2/(nin))
 	weights = np.random.normal(0, sigma,((nd, ny)))		 		# Weight vector (nd x ny)
 	return weights
 
 
 def grad_desc(value, grad):
+	""" Simple gradient descent function """
 	eta = 0.1
 	return (value - eta*grad)
